@@ -6,6 +6,7 @@ from tqdm import trange
 import numpy as np
 import argparse
 import sys
+import csv
 
 
 def parse_args(args=sys.argv[1:]):
@@ -52,7 +53,7 @@ def parse_args(args=sys.argv[1:]):
     
     parser.add_argument(
         "-nb",
-        "--numblack",
+        "--num_b",
         type=int,
         default=1,
         help='number of black worms'
@@ -60,7 +61,7 @@ def parse_args(args=sys.argv[1:]):
     
     parser.add_argument(
         "-nc",
-        "--numcau",
+        "--num_c",
         type=int,
         default=1,
         help='number of cautious'
@@ -68,7 +69,7 @@ def parse_args(args=sys.argv[1:]):
     
     parser.add_argument(
         "-nw",
-        "--numwhite",
+        "--num_w",
         type=int,
         default=0,
         help='number of white worms'
@@ -133,14 +134,17 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     beta=params['beta']
     gamma = params['gammaP']
     epsilon = params['epsilon']
-    
+
+    final = []
     for k in trange(n_iter):
         
-        t, V, B, W_B, C_B, C, W, P  = gsp_alg(G, sp_proc, ind_proc, IC, return_statuses,
+        t, V, B, W_B, C_B, C, W, P = gsp_alg(G, sp_proc, ind_proc, IC, return_statuses,
                                             tmax = float('Inf'))
         
         max_peack_black[k] = np.max(B+W_B+C_B)
         final_black[k] = B[-1]
+        final.append([V[-1], B[-1], W_B[-1], C_B[-1], C[-1], W[-1], P[-1]])
+
         
         ts_indx = np.where((B+W_B+C_B)/N>0.5)[0]
         if len(ts_indx)>0:
@@ -148,18 +152,22 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
         else:
             t_window[k] = 0
         
-        if k==0:
-                returns = (V, B, W_B, C_B, C, W, P)
-                dict_returns = {key : returns[i] for i, key in enumerate(return_statuses)}
-                dict_returns['t'] = t
-                pd.DataFrame.from_dict(dict_returns, orient='index').T.to_csv(f'results/sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv', index=False)
+        #if k==0:
+        #        returns = (V, B, W_B, C_B, C, W, P)
+        #        dict_returns = {key : returns[i] for i, key in enumerate(return_statuses)}
+        #        dict_returns['t'] = t
+        #        pd.DataFrame.from_dict(dict_returns, orient='index').T.to_csv(f'results/sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv', index=False)
 
     dict_results = {}
     dict_results['max_peack_black'] = max_peack_black
     dict_results['final_black'] = final_black
     dict_results['t_window'] = t_window
     pd.DataFrame.from_dict(dict_results, orient='index').to_csv(f'results/avg_sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv')
-    
+
+    df = pd.DataFrame(final)
+    df.to_csv(f'results/final_sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv',
+              index=False, header=False)
+
     return max_peack_black, final_black, t_window
 
 
