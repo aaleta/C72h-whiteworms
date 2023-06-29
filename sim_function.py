@@ -188,7 +188,7 @@ if __name__ == '__main__':
         IC[k] = 'B'
     for k in nodes[args.num_b:args.num_b+args.num_c]:
         IC[k] = 'C'
-    for k in nodes[args.num_b+args.num_c:args.num_b+args.num_b+args.num_c]:
+    for k in nodes[args.num_b+args.num_c:args.num_b+args.num_w+args.num_c]:
         IC[k] = 'W'
 
     params = {'beta': 1.1,
