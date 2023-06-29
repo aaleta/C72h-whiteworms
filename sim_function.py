@@ -2,66 +2,55 @@ import networkx as nx
 from EoN import Gillespie_simple_contagion as gsp_alg
 from collections import defaultdict
 import pandas as pd
-import argparse
 from tqdm import trange
 import numpy as np
+import argparse
+import sys
 
 
-#parse of parameters
-'''
-parser = argparse.ArgumentParser()
+def parse_args(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser()
 
-parser.add_argument(
-    "--netname", type=str, default='network.txt', help="name of the file with the network"
-)
+    # Simulation parameters
+    parser.add_argument(
+        "-n",
+        "--netname",
+        type=str,
+        default='ER',
+        help="name of the graph to be used"
+    )
 
-parser.add_argument(
-    "--beta", type=float, default=1.1, help="Worm infection rate"
-)
+    parser.add_argument(
+        '-b',
+        '--beta',
+        type=float,
+        default=1.1,
+        help='beta value'
+    )
 
-parser.add_argument(
-    "--gammaP", type=float, default=0.1, help="User updates rate when prompted"
-)
+    parser.add_argument(
+        "-g",
+        "--gammap",
+        type=float,
+        help='prompted transition rate'
+    )
 
-parser.add_argument(
-    "--epsilon", type=float, default=0.1, help="White worm activation rate"
-)
+    parser.add_argument(
+        "-e",
+        "--epsilon",
+        type=float,
+        help='ethics rate'
+    )
 
-parser.add_argument(
-    "--mu", type=float, default=1, help="White worm auto-updates rate"
-)
+    parser.add_argument(
+        "-i",
+        "--iterations",
+        type=int,
+        default=100,
+        help='number of iterations'
+    )
 
-args = parser.parse_known_args()[0]
-
-
-# Load network
-G_name = 'ER'
-
-filename = f'network_{G_name}.txt' #args.netname
-graphtype = nx.Graph()   # use net.Graph() for undirected graph
-
-# change float to int.
-G = nx.read_edgelist(
-    filename, 
-    create_using=graphtype,
-    delimiter=', ',
-    nodetype=int
-)
-
-IC = defaultdict(lambda: 'V')
-for node in range(1):
-    IC[node] = 'B'
-for node in range(2, 3):
-    IC[node] = 'C'
-
-params = {}
-
-params['beta'] = 1.1
-params['gammaP'] = 0.5
-params['epsilon'] = 0.5
-params['mu'] = 1
-
-'''
+    return parser.parse_args(args)
 
 
 def run_stoc_sim(params, G, G_name, IC, n_iter):
@@ -141,8 +130,6 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
                 dict_returns['t'] = t
                 pd.DataFrame.from_dict(dict_returns, orient='index').T.to_csv(f'results/sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv', index=False)
 
-                #pd.DataFrame.from_dict(dict_returns, orient='index').T.to_csv(f'results/sim_Gname{G_name}_beta{params['beta']}_gammaP{params['gammaP']}_epsilon{params['epsilon']}.csv', index=False)
-
     dict_results = {}
     dict_results['max_peack_black'] = max_peack_black
     dict_results['final_black'] = final_black
@@ -151,4 +138,27 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     
     return max_peack_black, final_black, t_window
 
-#run_stoc_sim(params, G, G_name, IC, 10)
+
+if __name__ == '__main__':
+    args = parse_args()
+
+    G_name = args.netname
+    G = nx.read_edgelist(
+        f'network_{G_name}.txt',
+        create_using=nx.Graph(),
+        delimiter=', ',
+        nodetype=int)
+
+    # Initial conditions
+    IC = defaultdict(lambda: 'V')
+    for node in range(1):
+        IC[node] = 'B'
+    for node in range(2, 3):
+        IC[node] = 'C'
+
+    params = {'beta': 1.1,
+              'gammaP': args.gammap,
+              'epsilon': args.epsilon,
+              'mu': 1}
+
+    run_stoc_sim(params, G, G_name, IC, args.iterations)
