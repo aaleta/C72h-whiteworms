@@ -49,6 +49,30 @@ def parse_args(args=sys.argv[1:]):
         default=100,
         help='number of iterations'
     )
+    
+    parser.add_argument(
+        "-nb",
+        "--numblack",
+        type=int,
+        default=1,
+        help='number of black worms'
+    )
+    
+    parser.add_argument(
+        "-nc",
+        "--numcau",
+        type=int,
+        default=1,
+        help='number of cautious'
+    )
+    
+    parser.add_argument(
+        "-nw",
+        "--numwhite",
+        type=int,
+        default=0,
+        help='number of white worms'
+    )
 
     return parser.parse_args(args)
 
@@ -151,10 +175,13 @@ if __name__ == '__main__':
 
     # Initial conditions
     IC = defaultdict(lambda: 'V')
-    for node in range(1):
-        IC[node] = 'B'
-    for node in range(2, 3):
-        IC[node] = 'C'
+    nodes = np.random.choice(len(G.nodes), args.num_b+args.num_c+args.num_w, replace=False)
+    for k in nodes[:args.num_b]:
+        IC[k] = 'B'
+    for k in nodes[args.num_b:args.num_b+args.num_c]:
+        IC[k] = 'C'
+    for k in nodes[args.num_b+args.num_c:args.num_b+args.num_b+args.num_c]:
+        IC[k] = 'W'
 
     params = {'beta': 1.1,
               'gammaP': args.gammap,
