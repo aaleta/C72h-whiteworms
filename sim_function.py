@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
     G_name = args.netname
     G = nx.read_edgelist(
-        f'network_{G_name}.txt',
+        f'networks/network_{G_name}_10000.txt',
         create_using=nx.Graph(),
         delimiter=', ',
         nodetype=int)
