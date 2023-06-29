@@ -32,7 +32,7 @@ parser.add_argument(
 )
 
 args = parser.parse_known_args()[0]
-'''
+
 
 # Load network
 G_name = 'ER'
@@ -60,6 +60,8 @@ params['beta'] = 1.1
 params['gammaP'] = 0.5
 params['epsilon'] = 0.5
 params['mu'] = 1
+
+'''
 
 
 def run_stoc_sim(params, G, G_name, IC, n_iter):
