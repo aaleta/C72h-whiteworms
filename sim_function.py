@@ -81,10 +81,10 @@ def parse_args(args=sys.argv[1:]):
 def run_stoc_sim(params, G, G_name, IC, n_iter):
     #initiliaze spontaneous transition network
 
-    nodes = ['V', 'C', 'W', 'B', 'C_W', 'W_B', 'P']
+    nodes = ['V', 'C', 'W', 'B', 'C_W', 'W_B', 'P_g', 'P_mu']
     edges = [
-        ('C_B', 'P', {'rate': params['gammaP']}), ('C', 'P', {'rate':params['gammaP']}), #user update prompted
-        ('W_B', 'P', {'rate': params['mu']}), ('W', 'P', {'rate': params['mu']}), #user update prompted or the worm updates 
+        ('C_B', 'P_g', {'rate': params['gammaP']}), ('C', 'P_g', {'rate':params['gammaP']}), #user update prompted
+        ('W_B', 'P_mu', {'rate': params['mu']}), ('W', 'P_mu', {'rate': params['mu']}), #user update prompted or the worm updates 
         ('C', 'W', {'rate':params['epsilon']}), ('C_B', 'W_B', {'rate':params['epsilon']}) # white worm gets active
             ]
 
@@ -124,7 +124,7 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
 
 
     # initial conditions
-    return_statuses = ('V', 'B', 'W_B', 'C_B', 'C', 'W', 'P')
+    return_statuses = ('V', 'B', 'W_B', 'C_B', 'C', 'W', 'P_g', 'P_mu')
     
     max_peack_black = np.zeros(n_iter)
     final_black = np.zeros(n_iter)
@@ -138,12 +138,12 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     final = []
     for k in trange(n_iter):
         
-        t, V, B, W_B, C_B, C, W, P = gsp_alg(G, sp_proc, ind_proc, IC, return_statuses,
+        t, V, B, W_B, C_B, C, W, P_g, P_mu = gsp_alg(G, sp_proc, ind_proc, IC, return_statuses,
                                             tmax = float('Inf'))
         
         max_peack_black[k] = np.max(B+W_B+C_B)
         final_black[k] = B[-1]
-        final.append([V[-1], B[-1], W_B[-1], C_B[-1], C[-1], W[-1], P[-1]])
+        final.append([V[-1], B[-1], W_B[-1], C_B[-1], C[-1], W[-1], P_g[-1], P_mu[-1]])
 
         
         ts_indx = np.where((B+W_B+C_B)/N>0.5)[0]
