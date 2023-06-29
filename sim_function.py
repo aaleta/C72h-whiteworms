@@ -191,7 +191,7 @@ if __name__ == '__main__':
     for k in nodes[args.num_b+args.num_c:args.num_b+args.num_w+args.num_c]:
         IC[k] = 'W'
 
-    params = {'beta': 1.1,
+    params = {'beta': args.beta,
               'gammaP': args.gammap,
               'epsilon': args.epsilon,
               'mu': 1}
