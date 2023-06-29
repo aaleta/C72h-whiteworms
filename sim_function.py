@@ -17,7 +17,7 @@ def parse_args(args=sys.argv[1:]):
         "-n",
         "--netname",
         type=str,
-        default='ER_N10000_<k>10',
+        default='ER',
         help="name of the graph to be used"
     )
 
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
     G_name = args.netname
     G = nx.read_edgelist(
-        f'networks/{G_name}.txt',
+        f'networks/network_{G_name}_10000.txt',
         create_using=nx.Graph(),
         delimiter=', ',
         nodetype=int)
