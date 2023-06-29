@@ -63,7 +63,7 @@ def parse_args(args=sys.argv[1:]):
         "-nc",
         "--num_c",
         type=int,
-        default=1,
+        default=0,
         help='number of cautious'
     )
     
@@ -71,7 +71,7 @@ def parse_args(args=sys.argv[1:]):
         "-nw",
         "--num_w",
         type=int,
-        default=0,
+        default=1,
         help='number of white worms'
     )
 
