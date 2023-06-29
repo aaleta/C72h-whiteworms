@@ -128,8 +128,9 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     
     max_peack_black = np.zeros(n_iter)
     final_black = np.zeros(n_iter)
-    t_window = np.zeros(n_iter)
+    t_window = np.zeros((n_iter, 100))
     t_total = np.zeros(n_iter)
+    thres = np.arange(0.01, 1.01, 0.01)
     
     N = len(G.nodes)
     beta=params['beta']
@@ -147,14 +148,18 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
         final.append([V[-1], B[-1], W_B[-1], C_B[-1], C[-1], W[-1], P_g[-1], P_mu[-1]])
 
         
-        ts_indx = np.where((B+W_B+C_B)/N>0.5)[0]
-        if len(ts_indx)>0:
-            if ts_indx[-1]==len(t)-1:
-                t_window[k] = -1
+
+        for j in range(100):
+            
+            ts_indx = np.where((B+W_B+C_B)/N>=thres[j])[0]
+
+            if len(ts_indx)>0:
+                if ts_indx[-1]==len(t)-1:
+                    t_window[k, j] = -1
+                else:
+                    t_window[k, j] = t[ts_indx[-1]]-t[ts_indx[0]]
             else:
-                t_window[k] = t[ts_indx[-1]]-t[ts_indx[0]]
-        else:
-            t_window[k] = 0
+                t_window[k, j] = 0
         
         t_total[k] = t[-1]-t[0]
         #if k==0:
@@ -166,7 +171,8 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     dict_results = {}
     dict_results['max_peack_black'] = max_peack_black
     dict_results['final_black'] = final_black
-    dict_results['t_window'] = t_window
+    for k in range(100):
+        dict_results[f't_window_{thres[k]:.2f}'] = t_window[:, k]
     dict_results['t_total'] = t_total
     pd.DataFrame.from_dict(dict_results, orient='index').to_csv(f'results/avg_sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv')
 
