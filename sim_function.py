@@ -81,10 +81,10 @@ def parse_args(args=sys.argv[1:]):
 def run_stoc_sim(params, G, G_name, IC, n_iter):
     #initiliaze spontaneous transition network
 
-    nodes = ['V', 'C', 'W', 'B', 'C_W', 'W_B', 'P']
+    nodes = ['V', 'C', 'W', 'B', 'C_W', 'W_B', 'P_g', 'P_mu']
     edges = [
-        ('C_B', 'P', {'rate': params['gammaP']}), ('C', 'P', {'rate':params['gammaP']}), #user update prompted
-        ('W_B', 'P', {'rate': params['mu']}), ('W', 'P', {'rate': params['mu']}), #user update prompted or the worm updates 
+        ('C_B', 'P_g', {'rate': params['gammaP']}), ('C', 'P_g', {'rate':params['gammaP']}), #user update prompted
+        ('W_B', 'P_mu', {'rate': params['mu']}), ('W', 'P_mu', {'rate': params['mu']}), #user update prompted or the worm updates 
         ('C', 'W', {'rate':params['epsilon']}), ('C_B', 'W_B', {'rate':params['epsilon']}) # white worm gets active
             ]
 
@@ -124,11 +124,13 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
 
 
     # initial conditions
-    return_statuses = ('V', 'B', 'W_B', 'C_B', 'C', 'W', 'P')
+    return_statuses = ('V', 'B', 'W_B', 'C_B', 'C', 'W', 'P_g', 'P_mu')
     
     max_peack_black = np.zeros(n_iter)
     final_black = np.zeros(n_iter)
-    t_window = np.zeros(n_iter)
+    t_window = np.zeros((n_iter, 100))
+    t_total = np.zeros(n_iter)
+    thres = np.arange(0.01, 1.01, 0.01)
     
     N = len(G.nodes)
     beta=params['beta']
@@ -138,20 +140,28 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     final = []
     for k in trange(n_iter):
         
-        t, V, B, W_B, C_B, C, W, P = gsp_alg(G, sp_proc, ind_proc, IC, return_statuses,
+        t, V, B, W_B, C_B, C, W, P_g, P_mu = gsp_alg(G, sp_proc, ind_proc, IC, return_statuses,
                                             tmax = float('Inf'))
         
         max_peack_black[k] = np.max(B+W_B+C_B)
         final_black[k] = B[-1]
-        final.append([V[-1], B[-1], W_B[-1], C_B[-1], C[-1], W[-1], P[-1]])
+        final.append([V[-1], B[-1], W_B[-1], C_B[-1], C[-1], W[-1], P_g[-1], P_mu[-1]])
 
         
-        ts_indx = np.where((B+W_B+C_B)/N>0.5)[0]
-        if len(ts_indx)>0:
-            t_window[k] = t[ts_indx[-1]]-t[ts_indx[0]]
-        else:
-            t_window[k] = 0
+
+        for j in range(100):
+            
+            ts_indx = np.where((B+W_B+C_B)/N>=thres[j])[0]
+
+            if len(ts_indx)>0:
+                if ts_indx[-1]==len(t)-1:
+                    t_window[k, j] = -1
+                else:
+                    t_window[k, j] = t[ts_indx[-1]]-t[ts_indx[0]]
+            else:
+                t_window[k, j] = 0
         
+        t_total[k] = t[-1]-t[0]
         #if k==0:
         #        returns = (V, B, W_B, C_B, C, W, P)
         #        dict_returns = {key : returns[i] for i, key in enumerate(return_statuses)}
@@ -161,7 +171,9 @@ def run_stoc_sim(params, G, G_name, IC, n_iter):
     dict_results = {}
     dict_results['max_peack_black'] = max_peack_black
     dict_results['final_black'] = final_black
-    dict_results['t_window'] = t_window
+    for k in range(100):
+        dict_results[f't_window_{thres[k]:.2f}'] = t_window[:, k]
+    dict_results['t_total'] = t_total
     pd.DataFrame.from_dict(dict_results, orient='index').to_csv(f'results/avg_sim_G{G_name}_beta{beta}_gammaP{gamma}_epsilon{epsilon}.csv')
 
     df = pd.DataFrame(final)
@@ -191,7 +203,7 @@ if __name__ == '__main__':
     for k in nodes[args.num_b+args.num_c:args.num_b+args.num_w+args.num_c]:
         IC[k] = 'W'
 
-    params = {'beta': 1.1,
+    params = {'beta': args.beta,
               'gammaP': args.gammap,
               'epsilon': args.epsilon,
               'mu': 1}
