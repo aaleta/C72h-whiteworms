@@ -12,6 +12,10 @@ def get_protected(args):
 
     initial_conditions = gillespie.random_seeds(len(network.nodes), args.n_black, args.n_white)
 
+    if args.network.startswith('CG_'):
+        parameters['beta_B'] /= len(network)
+        parameters['beta_W'] /= len(network)
+
     protection = gillespie.estimate_protection(network, parameters, initial_conditions, args.iterations)
 
     with open(f'results/protected_{args.network}_bB{args.beta_b}_bW{args.beta_w}_e{args.epsilon}_g{args.gamma}_m{args.mu}.pickle', 'wb') as file:
