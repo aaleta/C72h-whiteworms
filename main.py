@@ -33,7 +33,7 @@ def get_botnet(args):
         parameters['beta_B'] /= len(network)
         parameters['beta_W'] /= len(network)
 
-    botnet = gillespie.estimate_protection(network, parameters, initial_conditions, args.iterations)
+    botnet = gillespie.estimate_botnet(network, parameters, initial_conditions, args.iterations)
 
     with open(f'results/botnet_{args.network}_bB{args.beta_b}_bW{args.beta_w}_e{args.epsilon}_g{args.gamma}_m{args.mu}.pickle', 'wb') as file:
         pickle.dump(botnet, file)
