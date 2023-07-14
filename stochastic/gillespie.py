@@ -117,3 +117,24 @@ def estimate_protection(graph, parameters, initial_conditions, runs):
 
     return protected
 
+
+def estimate_botnet(graph, parameters, initial_conditions, runs):
+    """Obtain the maximum fraction of nodes in the botnet.
+
+    :param graph: network on which to run the simulation
+    :param parameters: dictionary containing beta_B, beta_W, epsilon, gamma and mu
+    :param initial_conditions: dictionary containing the initial state of each node
+    :param runs: number of iterations
+
+    :return: the maximum fraction of nodes in the botnet
+    """
+
+    botnet = []
+    for _ in range(runs):
+
+        _, _, B, _, D_B, _, W_B, _, _ = stochastic_simulation(graph, parameters,
+                                                              initial_conditions)
+        total = B + D_B + W_B
+        botnet.append(np.max(total))
+
+    return botnet
