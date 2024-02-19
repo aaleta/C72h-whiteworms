@@ -4,6 +4,7 @@ from scipy import optimize
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+
 def plot_evolution(data, dt=0.01):
     """Plot the time evolution of all states.
 
@@ -21,8 +22,8 @@ def plot_evolution(data, dt=0.01):
     fig, ax = plt.subplots()
 
     # Iterate over each state and plot its time evolution
-    for i in range(data.shape[1]):
-        ax.plot(timesteps, data[:, i], color=colors[i], label=labels[i])
+    for i in range(data.shape[1] - 1):
+        ax.plot(timesteps, data[:, (i + 1)], color=colors[i], label=labels[i])
 
     # Set the x and y labels
     ax.set_xlabel('Time')
@@ -92,7 +93,7 @@ def plot_2D_diagram(data, mu=1, gamma=1):
 
     # Calculate the theoretical line values
     epsilon_unique = np.unique(epsilon_values)
-    beta_theo = mu * ((epsilon_unique/gamma) + 1) / (epsilon_unique/gamma)
+    beta_theo = mu * ((epsilon_unique / gamma) + 1) / (epsilon_unique / gamma)
 
     # Plot the theoretical line
     ax.plot(epsilon_unique, beta_theo, 'r--', linewidth=2, label='Theoretical Line')
@@ -185,12 +186,12 @@ def plot_2D_botnet(data, epsilon=1, gamma=1, mu=1):
     # Create a heatmap using imshow
     heatmap = ax.imshow(P_grid, extent=[np.min(beta_W_values), np.max(beta_W_values),
                                         np.min(beta_B_values), np.max(beta_B_values)],
-                        origin='lower', aspect='auto', cmap='viridis',
+                        origin='lower', aspect='auto', cmap='viridis', norm="symlog",
                         vmin=0, vmax=1)
 
     # Calculate the theoretical line values
     beta_W_unique = np.unique(beta_W_values)
-    beta_theo = 0.5*(-(epsilon + mu + gamma) + np.sqrt((epsilon + gamma - mu)**2 + 4 * beta_W_unique * epsilon))
+    beta_theo = 0.5 * (-(epsilon + mu + gamma) + np.sqrt((epsilon + gamma - mu) ** 2 + 4 * beta_W_unique * epsilon))
 
     # Plot the theoretical line
     ax.plot(beta_W_unique, beta_theo, 'r--', linewidth=2, label='Theoretical Line')
@@ -201,6 +202,8 @@ def plot_2D_botnet(data, epsilon=1, gamma=1, mu=1):
 
     # Add a colorbar
     cbar = fig.colorbar(heatmap)
+    cbar.set_ticks([0, 0.1, 0.2, 0.5, 0.8, 1.0])
+    cbar.set_label('botnet size')
 
     # Set the title
     ax.set_title(f'epsilon={epsilon} gamma={gamma}')
@@ -216,10 +219,12 @@ def plot_2D_botnet(data, epsilon=1, gamma=1, mu=1):
     plt.show()
 
 
-def plot_botnet_threshold(beta_W_max, epsilon, gamma, mu):
+def plot_botnet_threshold(beta_W_max, epsilon, gamma, mu, th=False):
     """Plot the botnet threshold."""
 
-    values_list = epsilon if len(epsilon) > 1 else gamma
+    values_list = epsilon if isinstance(epsilon, np.ndarray) else gamma
+
+    fig, ax = plt.subplots()
 
     # Create a color gradient based on the values
     colors = plt.cm.viridis(np.linspace(np.min(values_list), np.max(values_list), len(values_list)))
@@ -227,28 +232,122 @@ def plot_botnet_threshold(beta_W_max, epsilon, gamma, mu):
     # Calculate beta_B values for each value
     beta_W_values = np.linspace(0, beta_W_max, 100)
     for value, color in zip(values_list, colors):
-        ep = value if len(epsilon) > 1 else epsilon
-        ga = value if len(gamma) > 1 else gamma
+        ep = value if isinstance(epsilon, np.ndarray) else epsilon
+        ga = value if isinstance(gamma, np.ndarray) else gamma
 
         beta_B_values = 0.5 * (-(ep + mu + ga) +
                                np.sqrt((ep + ga - mu) ** 2 + 4 * beta_W_values * ep))
+
         mask = beta_B_values >= 0
-        plt.plot(beta_W_values[mask], beta_B_values[mask], color=color)
+        ax.plot(beta_W_values[mask], beta_B_values[mask], color=color)
 
     # Set x-axis and y-axis labels
-    plt.xlabel('beta_W')
-    plt.ylabel('beta_B')
+    ax.set_xlabel('beta_W')
+    ax.set_ylabel('beta_B')
+
+    ax.set_xlim(0, beta_W_max)
+    ax.set_xlim(0)
+
+    # Plot the theoretical line
+    thresholds = mu * ((epsilon / gamma) + 1) / (epsilon / gamma)
+    ax.plot(thresholds, [0] * len(thresholds), marker='o', linestyle='None', color='black', label='threshold')
+
+    if th:
+        ax.plot([0 + mu, beta_W_max + mu], [0, beta_W_max], 'k--')
 
     # Create a color bar for epsilon values
-    label = 'epsilon' if len(epsilon) > 1 else 'gamma'
+    label = 'epsilon' if isinstance(epsilon, np.ndarray) else 'gamma'
 
     sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis)
     sm.set_array(values_list)
-    cbar = plt.colorbar(sm)
+    cbar = plt.colorbar(sm, ax=plt.gca())
     cbar.set_label(label)
 
     # Add a legend
-    plt.legend()
+    ax.legend()
 
     # Show the plot
+    plt.show()
+
+
+def plot_2D_botnet_time(data, beta_W=1, beta_B=1, gamma=1, mu=1, norm=True):
+    """Plots the time the botnet is above a threshold as a heatmap."""
+
+    # Plot
+    plt.figure(figsize=(12, 5))
+
+    # Extract force_rate, threshold and time values from the data
+    force_rate_values = data[:, 0]
+    threshold_values = data[:, 1]
+    time = data[:, 2]
+    total_time = data[:, 3]
+
+    # Estimate white worm size
+    def R0(beta, epsilon, gamma=1, mu=1):
+        ep = epsilon / gamma
+        return (beta / mu) * (ep / (ep + 1))
+
+    def func(x, R0):
+        return x - 1 + math.exp(-R0 * x)
+
+    force_rate_unique = np.unique(force_rate_values)
+    z_theo = [1.0 - optimize.root(func, [0.5], args=(R0(beta_W, force_rate * gamma, gamma, mu),)).x[0]
+              for force_rate in force_rate_unique]
+
+    # Determine the grid size
+    grid_size = int(np.sqrt(len(time)))
+
+    # Reshape the time values to create a 2D grid
+    time_grid = time.reshape((grid_size, grid_size))
+
+    # Create fig 1
+    plt.subplot(1, 2, 1)
+    heatmap1 = plt.imshow(time_grid, extent=[np.min(force_rate_values), np.max(force_rate_values),
+                                             np.min(threshold_values), np.max(threshold_values)],
+                          origin='lower', aspect='auto', cmap='viridis', norm="symlog",
+                          vmin=0, vmax=1)
+
+    # Plot the theoretical line values
+    plt.plot(force_rate_unique, z_theo, 'r--', label='Theoretical W size', linewidth=2)
+    plt.legend(loc="upper right")
+
+    # Set the x and y labels
+    plt.xlabel('epsilon/gamma')
+    plt.ylabel('threshold')
+
+    # Add a colorbar
+    cbar = plt.colorbar(heatmap1, ax=plt.gca())
+    cbar.set_ticks([0, 0.1, 0.2, 0.5, 0.8, 1.0])
+    cbar.set_label('% time above threshold')
+    plt.title('% time')
+
+    # Create fig 2
+    time = time * total_time
+    grid_size = int(np.sqrt(len(time)))
+    time_grid = time.reshape((grid_size, grid_size))
+
+    plt.subplot(1, 2, 2)
+    heatmap2 = plt.imshow(time_grid, extent=[np.min(force_rate_values), np.max(force_rate_values),
+                                             np.min(threshold_values), np.max(threshold_values)],
+                          origin='lower', aspect='auto', cmap='viridis', norm="symlog",
+                          vmin=0)  # , vmax=1)
+
+    # Plot the theoretical line values
+    plt.plot(force_rate_unique, z_theo, 'r--', label='Theoretical W size', linewidth=2)
+    plt.legend(loc="upper right")
+
+    # Set the x and y labels
+    plt.xlabel('epsilon/gamma')
+    plt.ylabel('threshold')
+
+    # Add a colorbar
+    cbar = plt.colorbar(heatmap2, ax=plt.gca())
+    cbar.set_label('Time above threshold')
+    plt.title('Simulation time')
+
+    # Set the title
+    plt.suptitle(f'beta_W={beta_W} beta_B={beta_B} gamma={gamma}')
+
+    # Display the plot
+    plt.tight_layout()
     plt.show()

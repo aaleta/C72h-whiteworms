@@ -9,7 +9,7 @@ def parse_args(args):
         "-a",
         "--analysis-type",
         type=str,
-        help="one of [protected| or..."
+        help="one of [protected|botnet|threshold]"
     )
 
     # Simulation parameters
@@ -77,6 +77,14 @@ def parse_args(args):
         type=int,
         default=1,
         help='number of white worms'
+    )
+
+    parser.add_argument(
+        "-th",
+        "--threshold",
+        type=float,
+        default=0,
+        help='fraction of nodes with black worm'
     )
 
     return parser.parse_args(args)

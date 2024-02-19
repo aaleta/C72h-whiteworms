@@ -72,7 +72,7 @@ def stochastic_simulation(graph, parameters, initial_conditions, normalized=True
 
     if normalized:
         nodes = len(graph.nodes)
-        V, B, D, D_B, W, W_B, P_g, P_mu = V/nodes, B/nodes, D/nodes, D_B/nodes, W/nodes, W_B/nodes, P_g/nodes, P_mu/nodes
+        V, B, D, D_B, W, W_B, P_g, P_mu = V / nodes, B / nodes, D / nodes, D_B / nodes, W / nodes, W_B / nodes, P_g / nodes, P_mu / nodes
 
     return t, V, B, D, D_B, W, W_B, P_g, P_mu
 
@@ -92,7 +92,7 @@ def random_seeds(n_nodes, n_black, n_white):
     for node in nodes[0:n_black]:
         initial_conditions[node] = 'B'
 
-    for node in nodes[n_black:n_black+n_white]:
+    for node in nodes[n_black:n_black + n_white]:
         initial_conditions[node] = 'W'
 
     return initial_conditions
@@ -131,7 +131,6 @@ def estimate_botnet(graph, parameters, initial_conditions, runs):
 
     botnet = []
     for _ in range(runs):
-
         _, _, B, _, D_B, _, W_B, P_g, P_mu = stochastic_simulation(graph, parameters,
                                                                    initial_conditions)
         total_bots = B + D_B + W_B
@@ -139,3 +138,33 @@ def estimate_botnet(graph, parameters, initial_conditions, runs):
         botnet.append([np.max(total_bots), total_protected])
 
     return botnet
+
+
+def estimate_botnet_threshold(graph, parameters, threshold, initial_conditions, runs):
+    """Obtain the time evolution of the black worm.
+
+    :param graph: network on which to run the simulation
+    :param parameters: dictionary containing beta_B, beta_W, epsilon, gamma and mu
+    :param threshold: fraction of nodes in the botnet for it to be dangerous
+    :param initial_conditions: dictionary containing the initial state of each node
+    :param runs: number of iterations
+
+    :return: fraction of protected nodes, of the simulation above the critical size, and total simulation time
+    """
+
+    results = []
+    for _ in range(runs):
+        t, _, B, _, D_B, _, W_B, P_g, P_mu = stochastic_simulation(graph, parameters,
+                                                                   initial_conditions)
+        total_protected = P_g[-1] + P_mu[-1]
+
+        evolution = np.column_stack((t, B + D_B + W_B))
+        total_time = t[-1] - t[0]
+
+        above_size = evolution[evolution[:, 1] > threshold]
+        time = above_size[-1, 0] - above_size[0, 0] if len(above_size) else 0
+        time = time / max(t)
+
+        results.append([total_protected, time, total_time])
+
+    return results
