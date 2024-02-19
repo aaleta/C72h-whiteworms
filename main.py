@@ -36,9 +36,14 @@ def get_botnet(args):
 
     initial_conditions = gillespie.random_seeds(len(network.nodes), args.n_black, args.n_white)
 
+    match_degree = re.search(r"_k(\d+)", args.network)
     if args.network.startswith('CG_'):
         parameters['beta_B'] /= len(network)
         parameters['beta_W'] /= len(network)
+    elif match_degree:
+        degree = float(match_degree.group(1))
+        parameters['beta_B'] /= degree
+        parameters['beta_W'] /= degree
 
     botnet = gillespie.estimate_botnet(network, parameters, initial_conditions, args.iterations)
 
@@ -54,9 +59,14 @@ def get_botnet_threshold(args):
 
     initial_conditions = gillespie.random_seeds(len(network.nodes), args.n_black, args.n_white)
 
+    match_degree = re.search(r"_k(\d+)", args.network)
     if args.network.startswith('CG_'):
         parameters['beta_B'] /= len(network)
         parameters['beta_W'] /= len(network)
+    elif match_degree:
+        degree = float(match_degree.group(1))
+        parameters['beta_B'] /= degree
+        parameters['beta_W'] /= degree
 
     botnet_threshold = gillespie.estimate_botnet_threshold(network, parameters, args.threshold, initial_conditions, args.iterations)
 
