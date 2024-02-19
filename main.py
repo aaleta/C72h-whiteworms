@@ -1,3 +1,4 @@
+import re
 import sys
 import pickle
 import networkx as nx
@@ -12,9 +13,14 @@ def get_protected(args):
 
     initial_conditions = gillespie.random_seeds(len(network.nodes), args.n_black, args.n_white)
 
+    match_degree = re.search(r"_k(\d+)_")
     if args.network.startswith('CG_'):
         parameters['beta_B'] /= len(network)
         parameters['beta_W'] /= len(network)
+    elif match_degree:
+        degree = float(match_degree.group(1))
+        parameters['beta_B'] /= degree
+        parameters['beta_W'] /= degree
 
     protection = gillespie.estimate_protection(network, parameters, initial_conditions, args.iterations)
 
