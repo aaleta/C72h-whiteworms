@@ -13,7 +13,7 @@ def get_protected(args):
 
     initial_conditions = gillespie.random_seeds(len(network.nodes), args.n_black, args.n_white)
 
-    match_degree = re.search(r"_k(\d+)_")
+    match_degree = re.search(r"_k(\d+)_", args.network)
     if args.network.startswith('CG_'):
         parameters['beta_B'] /= len(network)
         parameters['beta_W'] /= len(network)
