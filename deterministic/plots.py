@@ -308,7 +308,7 @@ def plot_2D_botnet_time(data, beta_W=1, beta_B=1, gamma=1, mu=1, norm=True):
                           vmin=0, vmax=1)
 
     # Plot the theoretical line values
-    plt.plot(force_rate_unique, z_theo, 'r--', label='Theoretical W size', linewidth=2)
+    plt.plot(force_rate_unique, z_theo, 'r--', label='1.0 - theoretical (hom.) W size', linewidth=2)
     plt.legend(loc="upper right")
 
     # Set the x and y labels
@@ -333,7 +333,7 @@ def plot_2D_botnet_time(data, beta_W=1, beta_B=1, gamma=1, mu=1, norm=True):
                           vmin=0)  # , vmax=1)
 
     # Plot the theoretical line values
-    plt.plot(force_rate_unique, z_theo, 'r--', label='Theoretical W size', linewidth=2)
+    plt.plot(force_rate_unique, z_theo, 'r--', label='1.0 - theoretical W size', linewidth=2)
     plt.legend(loc="upper right")
 
     # Set the x and y labels
