@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import odeint
 
-t, V, B, D, DB, W, WB, P = list(range(8))
+t, V, B, D, DB, W, WB, P, PS, PF = list(range(10))
 
 
 def system(state, time, parameters):
@@ -13,7 +13,7 @@ def system(state, time, parameters):
 
     :returns the derivative of the states in the same order
     """
-    rho_V, rho_B, rho_D, rho_DB, rho_W, rho_WB, rho_P = state
+    rho_V, rho_B, rho_D, rho_DB, rho_W, rho_WB, rho_P, rho_PS, rho_PF = state
 
     # Auxiliary parameters
     beta, epsilon, gamma, mu = parameters['beta'], parameters['epsilon'], parameters['gamma'], parameters['mu']
@@ -28,8 +28,10 @@ def system(state, time, parameters):
     drho_W = epsilon * rho_D - (bphi['B'] + mu) * rho_W
     drho_WB = epsilon * rho_DB + bphi['B'] * rho_W - mu * rho_WB
     drho_P = mu * rho_WB + mu * rho_W + gamma * rho_DB + gamma * rho_D
+    drho_PS = gamma * rho_DB + gamma * rho_D
+    drho_PF = mu * rho_WB + mu * rho_W
 
-    return [drho_V, drho_B, drho_D, drho_DB, drho_W, drho_WB, drho_P]
+    return [drho_V, drho_B, drho_D, drho_DB, drho_W, drho_WB, drho_P, drho_PS, drho_PF]
 
 
 def solve_homogeneous_system(parameters, tmax, dt=0.01, initial_B=0.01, initial_W=0.01):
@@ -44,7 +46,7 @@ def solve_homogeneous_system(parameters, tmax, dt=0.01, initial_B=0.01, initial_
     :returns the solved system of equations
     """
     t = np.arange(0, tmax, dt)
-    initial_state = [1.0 - initial_B - initial_W, initial_B, 0, 0, initial_W, 0, 0]
+    initial_state = [1.0 - initial_B - initial_W, initial_B, 0, 0, initial_W, 0, 0, 0, 0]
 
     result = odeint(system, initial_state, t, args=(parameters,))
     result = np.column_stack((t, result))
@@ -82,7 +84,7 @@ def compute_diagram(parameters, tmax, beta_B=None, beta_W=None, dt=0.01, initial
 
 
 def compute_2D_diagram(parameters, tmax, beta_W, epsilon_p, dt=0.01, initial_B=0.01, initial_W=0.01):
-    """Computes the invasion diagram as a function of beta.
+    """Computes the invasion diagram as a function of beta and epsilon.
 
     :param parameters: should contain the parameters beta (dict), epsilon, gamma, mu
     :param tmax: maximum time to integrate
@@ -132,6 +134,32 @@ def compute_2D_botnet(parameters, tmax, beta_B_list, beta_W_list, dt=0.01, initi
 
             results = np.vstack((results,
                                  np.array([[beta_B, beta_W, np.max(botnet_size)]])))
+
+    return results
+
+
+def compute_protection(parameters, tmax, epsilon_list, dt=0.01, initial_B=0.0, initial_W=0.01):
+    """Computes the fraction of self-protected and forced-protected devides as a function of epsilon.
+
+    :param parameters: should contain the parameters beta (dict), epsilon, gamma, mu
+    :param tmax: maximum time to integrate
+    :param epsilon_list: protected devices is estimated over epsilon
+    :param dt: timestep, defaults to 0.01
+    :param initial_B: initial fraction of B agents, defaults to 0.01
+    :param initial_W: initial fraction of W agents, defaults to 0.01
+
+    :returns the final fraction of self-protected and force-protected
+    """
+
+    results = np.empty((0, 6))
+    for epsilon in epsilon_list:
+        parameters['epsilon'] = epsilon
+
+        last_value = solve_homogeneous_system(parameters, tmax, dt, initial_B, initial_W)[-1]
+
+        results = np.vstack((results,
+                             np.array([[parameters['beta']['W'], epsilon, parameters['gamma'],
+                                        last_value[P], last_value[PS], last_value[PF]]])))
 
     return results
 

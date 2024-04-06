@@ -22,7 +22,7 @@ def plot_evolution(data, dt=0.01):
     fig, ax = plt.subplots()
 
     # Iterate over each state and plot its time evolution
-    for i in range(data.shape[1] - 1):
+    for i in range(len(labels)):
         ax.plot(timesteps, data[:, (i + 1)], color=colors[i], label=labels[i])
 
     # Set the x and y labels
