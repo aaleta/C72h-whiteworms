@@ -5,3 +5,5 @@ A network epidemiology approach for active cyber defense, F. Bonacina, I. Echego
 
 This work is the output of the Complexity72h workshop, held at IFISC in Palma, Spain, 26-30 June 2023, https://www.complexity72h.com. AST acknowledges
 support by FCT – Funda ̧c ̃ao para a Ciˆencia e Tecnologia – through the LASIGE Research Unit, ref. UIDB/00408/2020 and ref. UIDP/ 00408/2020. AA acknowledges support from the grant RYC2021-033226-I funded by MCIN/AEI/10.13039/501100011033 and the European Union NextGenerationEU/PRTR.
+
+- The complete graph for N = 10 000 exceeds the size limits of GitHub. Thus, it must be generated locally.

@@ -106,14 +106,14 @@ def estimate_protection(graph, parameters, initial_conditions, runs):
     :param initial_conditions: dictionary containing the initial state of each node
     :param runs: number of iterations
 
-    :return: the fraction of protected nodes for each run
+    :return: the fraction of protected nodes for each run in each state
     """
 
     protected = []
     for _ in range(runs):
         _, _, _, _, _, _, _, P_g, P_mu = stochastic_simulation(graph, parameters,
                                                                initial_conditions)
-        protected.append(P_g[-1] + P_mu[-1])
+        protected.append([P_g[-1], P_mu[-1]])
 
     return protected
 
